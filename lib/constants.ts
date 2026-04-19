@@ -1,0 +1,146 @@
+import type { NavItem } from './types'
+
+export const FORGE_STAGES = [
+  { id: 'RAW_ORE', label: 'Raw Ore', icon: '⛏️', description: 'First exposure', prompt: 'Explain what you already know about this concept' },
+  { id: 'HEATING', label: 'Heating', icon: '🔥', description: 'Breaking initial models', prompt: 'What assumptions are you making about this?' },
+  { id: 'HAMMERING', label: 'Hammering', icon: '🔨', description: 'Socratic pressure', prompt: 'Defend your understanding against this objection' },
+  { id: 'QUENCHING', label: 'Quenching', icon: '💧', description: 'Novel contexts', prompt: 'Apply this concept to an unexpected domain' },
+  { id: 'TEMPERING', label: 'Tempering', icon: '⏳', description: '24hr gap required', prompt: 'Recall from memory — no notes' },
+  { id: 'POLISHING', label: 'Polishing', icon: '✨', description: 'Teach back', prompt: 'Explain this to a complete novice in your own words' },
+  { id: 'ASSAYING', label: 'Assaying', icon: '🏆', description: 'Final exam', prompt: 'Synthesize everything you know into a comprehensive explanation' },
+]
+
+export const HELIX_REVOLUTIONS = [
+  { id: 'SURFACE', label: 'Surface', emoji: '🌊', color: '#6366f1' },
+  { id: 'STRUCTURAL', label: 'Structural', emoji: '🏗️', color: '#8b5cf6' },
+  { id: 'EDGE_CASES', label: 'Edge Cases', emoji: '⚡', color: '#f59e0b' },
+  { id: 'FIRST_PRINCIPLES', label: 'First Principles', emoji: '🧬', color: '#10b981' },
+  { id: 'FIND_FLAWS', label: 'Find Flaws', emoji: '🔍', color: '#ef4444' },
+  { id: 'SYNTHESIS', label: 'Synthesis', emoji: '🌌', color: '#06b6d4' },
+]
+
+export const PHILOSOPHERS = [
+  { id: 'einstein', name: 'Einstein', era: '1879-1955', emoji: '⚛️', color: '#6366f1' },
+  { id: 'aristotle', name: 'Aristotle', era: '384-322 BC', emoji: '🏛️', color: '#8b5cf6' },
+  { id: 'nietzsche', name: 'Nietzsche', era: '1844-1900', emoji: '⚡', color: '#ef4444' },
+  { id: 'lovelace', name: 'Ada Lovelace', era: '1815-1852', emoji: '💻', color: '#10b981' },
+  { id: 'suntzu', name: 'Sun Tzu', era: '544-496 BC', emoji: '⚔️', color: '#f59e0b' },
+  { id: 'beauvoir', name: 'Simone de Beauvoir', era: '1908-1986', emoji: '🌹', color: '#ec4899' },
+  { id: 'tesla', name: 'Tesla', era: '1856-1943', emoji: '🔮', color: '#06b6d4' },
+  { id: 'confucius', name: 'Confucius', era: '551-479 BC', emoji: '☯️', color: '#d97706' },
+  { id: 'feynman', name: 'Feynman', era: '1918-1988', emoji: '🎯', color: '#22c55e' },
+  { id: 'darwin', name: 'Darwin', era: '1809-1882', emoji: '🦋', color: '#84cc16' },
+  { id: 'turing', name: 'Turing', era: '1912-1954', emoji: '🤖', color: '#38bdf8' },
+  { id: 'hooks', name: 'bell hooks', era: '1952-2021', emoji: '✊', color: '#a78bfa' },
+]
+
+export const PSYCHE_DIMENSIONS = [
+  { id: 'reasoning_style', label: 'Reasoning Style', color: '#6366f1', description: 'How you construct logical chains' },
+  { id: 'abstraction_tolerance', label: 'Abstraction Tolerance', color: '#8b5cf6', description: 'Comfort with non-concrete ideas' },
+  { id: 'error_recovery', label: 'Error Recovery', color: '#06b6d4', description: 'Speed of bouncing back from mistakes' },
+  { id: 'curiosity_signature', label: 'Curiosity Signature', color: '#10b981', description: 'Pattern of exploratory questions' },
+  { id: 'confidence_competence_gap', label: 'Confidence Gap', color: '#f59e0b', description: 'Delta between felt and actual mastery' },
+  { id: 'analogical_preference', label: 'Analogical Preference', color: '#ef4444', description: 'Reliance on metaphors and comparisons' },
+  { id: 'attention_decay', label: 'Attention Decay', color: '#a855f7', description: 'Rate at which focus diminishes' },
+  { id: 'vocabulary_complexity', label: 'Vocabulary Complexity', color: '#ec4899', description: 'Preferred language register' },
+  { id: 'question_depth', label: 'Question Depth', color: '#84cc16', description: 'Surface vs deep inquiry pattern' },
+  { id: 'topic_persistence', label: 'Topic Persistence', color: '#22c55e', description: 'How long you stick to one topic' },
+  { id: 'frustration_threshold', label: 'Frustration Threshold', color: '#f97316', description: 'Tolerance for ambiguity and difficulty' },
+  { id: 'breakthrough_pattern', label: 'Breakthrough Pattern', color: '#38bdf8', description: 'How your "aha" moments cluster' },
+  { id: 'learning_velocity', label: 'Learning Velocity', color: '#34d399', description: 'Rate of concept acquisition' },
+  { id: 'metacognitive_awareness', label: 'Metacognition', color: '#c084fc', description: 'Awareness of your own thinking' },
+]
+
+export const CONFIDENCE_COLORS: Record<string, string> = {
+  VERIFIED: '#34d399',
+  CONSENSUS: '#818cf8',
+  DEBATED: '#fbbf24',
+  SPECULATIVE: '#f87171',
+}
+
+export const NAV_ITEMS: NavItem[] = [
+  { id: 'standard', label: 'Chat', icon: 'MessageSquare', shortcut: '⌘1', description: 'Main learning conversation', color: '#6366f1' },
+  { id: 'psyche', label: 'Psyche Engine', icon: 'Brain', shortcut: '⌘2', description: '14-dimension cognitive map', color: '#c084fc' },
+  { id: 'cosmos-classroom', label: 'Cosmos Classroom', icon: 'Globe', shortcut: '', description: '3D universe of knowledge', color: '#818cf8' },
+  { id: 'trident', label: 'Trident Intelligence', icon: 'Zap', shortcut: '⌘3', description: 'Three AI perspectives', color: '#f59e0b' },
+  { id: 'forge', label: 'Cognitive Forge', icon: 'Flame', shortcut: '⌘4', description: '7-stage concept metallurgy', color: '#ef4444' },
+  { id: 'parliament', label: 'Persona Parliament', icon: 'Users', shortcut: '⌘5', description: '12 philosopher council', color: '#8b5cf6' },
+  { id: 'curriculum', label: 'Sentient Curriculum', icon: 'BookOpen', shortcut: '⌘6', description: 'Living learning plan', color: '#84cc16' },
+  { id: 'oracle', label: 'Oracle Mode', icon: 'Eye', shortcut: '⌘7', description: '30-day path simulation', color: '#06b6d4' },
+  { id: 'nemesis', label: 'Nemesis System', icon: 'Target', shortcut: '⌘8', description: 'Weakness exploitation', color: '#dc2626' },
+  { id: 'helix', label: 'The Helix', icon: 'RotateCcw', shortcut: '⌘9', description: 'Spiral spaced repetition', color: '#10b981' },
+  { id: 'vault', label: 'The Vault', icon: 'Lock', shortcut: '⌘0', description: 'Encrypted memory palace', color: '#f59e0b' },
+  { id: 'tides', label: 'Semantic Tides', icon: 'TrendingUp', shortcut: '', description: 'Understanding drift detection', color: '#3b82f6' },
+  { id: 'gravity', label: 'Gravity Field', icon: 'Orbit', shortcut: '', description: 'Knowledge mass & orbits', color: '#7c3aed' },
+  { id: 'dark-knowledge', label: 'Dark Knowledge', icon: 'Search', shortcut: '', description: 'Blind spot archaeology', color: '#475569' },
+  { id: 'mirror', label: 'Mirror Protocol', icon: 'Mirror', shortcut: '', description: 'Weekly self-reflection', color: '#ec4899' },
+  { id: 'civilization', label: 'Civilization Builder', icon: 'Building2', shortcut: '', description: 'Knowledge-powered city sim', color: '#d97706' },
+  { id: 'symphony', label: 'Symphony', icon: 'Music', shortcut: '', description: 'Concept sound alchemy', color: '#a855f7' },
+  { id: 'blind-spots', label: 'Blind Spot Archaeology', icon: 'Layers', shortcut: '', description: 'Assumption excavation', color: '#64748b' },
+  { id: 'precognition', label: 'Precognitive Graph', icon: 'Network', shortcut: '', description: 'Future struggle prediction', color: '#0ea5e9' },
+  { id: 'shadow', label: 'Shadow Self', icon: 'Ghost', shortcut: '', description: '6-month future simulation', color: '#6d28d9' },
+  { id: 'temporal-waves', label: 'Temporal Waves', icon: 'Clock', shortcut: '', description: 'Concept through history', color: '#8b5cf6' },
+  { id: 'synaptic-sprint', label: 'Synaptic Sprint', icon: 'Timer', shortcut: '', description: 'Rapid-fire learning burst', color: '#22c55e' },
+  { id: 'final-boss', label: 'Final Boss', icon: 'Skull', shortcut: '', description: 'Maximum difficulty exam', color: '#dc2626' },
+  { id: 'babel-mind', label: 'Babel Mind', icon: 'Languages', shortcut: '', description: 'Cross-paradigm reframing', color: '#f97316' },
+  { id: 'alien-mode', label: 'Alien Mode', icon: 'Alien', shortcut: '', description: 'Zero-context explanation', color: '#06ffa5' },
+  { id: 'voice', label: 'Voice Soul', icon: 'Mic', shortcut: '', description: 'Voice-based soul reading', color: '#ec4899' },
+  { id: 'assessment', label: 'Assessment', icon: 'ClipboardList', shortcut: '', description: 'Procedural examination', color: '#6366f1' },
+  { id: 'living-syllabus', label: 'Living Syllabus', icon: 'TreePine', shortcut: '', description: 'Dynamic knowledge tree', color: '#22c55e' },
+]
+
+export const SPRING_CONFIG = {
+  type: 'spring' as const,
+  stiffness: 300,
+  damping: 30,
+  mass: 1,
+}
+
+export const STAGGER_CONFIG = {
+  delayChildren: 0.1,
+  staggerChildren: 0.05,
+}
+
+export const API_ENDPOINTS = {
+  CHAT_STREAM: '/api/chat/stream',
+  TRIDENT_STREAM: '/api/trident/stream',
+  ASSESSMENT_GENERATE: '/api/assessment/generate',
+  ASSESSMENT_AUTOPSY: '/api/assessment/autopsy',
+  PARLIAMENT_CONVENE: '/api/parliament/convene',
+  PARLIAMENT_DUEL: '/api/parliament/duel',
+  PARLIAMENT_SUBPOENA: '/api/parliament/subpoena',
+  PARLIAMENT_VOTE: '/api/parliament/vote',
+  FORGE_ADVANCE: '/api/forge/advance',
+  FORGE_STATUS: '/api/forge/status',
+  CURRICULUM_NEXT: '/api/curriculum/next',
+  ORACLE_TIMELINE: '/api/oracle/timeline',
+  NEMESIS_CHALLENGE: '/api/nemesis/challenge',
+  NEMESIS_OUTCOME: '/api/nemesis/outcome',
+  HELIX_NEXT: '/api/helix/next',
+  HELIX_DUE: '/api/helix/due',
+  TIDES_READING: '/api/tides/reading',
+  TIDES_CHART: '/api/tides/chart',
+  GRAVITY_MAP: '/api/gravity/map',
+  DARK_KNOWLEDGE_DETECT: '/api/dark-knowledge/detect',
+  MIRROR_REPORT: '/api/mirror/report',
+  CIVILIZATION_DECISION: '/api/civilization/decision',
+  CIVILIZATION_INIT: '/api/civilization/init',
+  SYMPHONY_MOTIF: '/api/symphony/motif',
+  VOICE_ANALYZE: '/api/voice/analyze',
+  VAULT_STORE: '/api/vault/store',
+  VAULT_TIMELINE: '/api/vault/timeline',
+  VAULT_SEARCH: '/api/vault/search',
+  VAULT_EXPORT: '/api/vault/export',
+  PSYCHE_STATE: '/api/psyche/state',
+  PSYCHE_VISUALIZATION: '/api/psyche/visualization',
+  DASHBOARD: '/api/analytics/dashboard',
+  WEEKLY: '/api/analytics/weekly',
+  BLIND_SPOTS_ANALYZE: '/api/blind-spots/analyze',
+  PRECOGNITION_MAP: '/api/precognition/map',
+  SHADOW_PROMPT: '/api/shadow/prompt',
+  TEMPORAL_WAVES: '/api/temporal-waves/response',
+  SYNAPTIC_SPRINT: '/api/synaptic-sprint/generate',
+  FINAL_BOSS: '/api/final-boss/examine',
+  BABEL_MIND: '/api/babel-mind/reframe',
+  ALIEN_MODE: '/api/alien-mode/translate',
+} as const

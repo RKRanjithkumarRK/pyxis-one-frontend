@@ -1,0 +1,20 @@
+import type { NextConfig } from 'next'
+
+const nextConfig: NextConfig = {
+  reactStrictMode: true,
+  experimental: {
+    optimizePackageImports: ['lucide-react', 'framer-motion', 'recharts'],
+  },
+  webpack: (config) => {
+    config.externals = config.externals || []
+    // Three.js needs special handling
+    config.module.rules.push({
+      test: /\.(glsl|vs|fs|vert|frag)$/,
+      use: ['raw-loader'],
+      exclude: /node_modules/,
+    })
+    return config
+  },
+}
+
+export default nextConfig

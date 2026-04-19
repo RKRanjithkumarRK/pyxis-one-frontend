@@ -4,6 +4,7 @@ import { Sidebar } from '@/components/layout/Sidebar'
 import { StatusBar } from '@/components/layout/StatusBar'
 import { CommandBar } from '@/components/layout/CommandBar'
 import { KeyboardShortcuts } from '@/components/layout/KeyboardShortcuts'
+import { SetupBanner } from '@/components/layout/SetupBanner'
 
 export default function ChatLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -12,6 +13,7 @@ export default function ChatLayout({ children }: { children: React.ReactNode }) 
       <CommandBar />
       <Sidebar />
       <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
+        <SetupBanner />
         <div className="flex-1 min-h-0 overflow-hidden">
           {children}
         </div>

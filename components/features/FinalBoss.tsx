@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Skull } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
@@ -31,6 +31,7 @@ export function FinalBoss() {
   const [streaming, setStreaming] = useState(false)
   const [particles, setParticles] = useState<{ id: number; x: number; y: number; color: string }[]>([])
   const containerRef = useRef<HTMLDivElement>(null)
+  const feedbackRef = useRef('')
 
   const spawnParticles = () => {
     if (!containerRef.current) return
@@ -60,12 +61,16 @@ export function FinalBoss() {
     if (!answer.trim() || streaming) return
     setStreaming(true)
     setFeedback('')
+    feedbackRef.current = ''
     spawnParticles()
     try {
-      const controller = finalBoss(sessionId, answer, (chunk) => setFeedback((p) => p + chunk)) as AbortController
+      const controller = finalBoss(sessionId, answer, (chunk) => {
+        feedbackRef.current += chunk
+        setFeedback((p) => p + chunk)
+      }) as AbortController
       await new Promise<void>((resolve) => setTimeout(resolve, 25000))
       controller.abort()
-      setPhase(feedback.toLowerCase().includes('fail') ? 'defeat' : 'victory')
+      setPhase(feedbackRef.current.toLowerCase().includes('fail') ? 'defeat' : 'victory')
     } catch {
       setFeedback('The boss has fallen silent.')
       setPhase('defeat')

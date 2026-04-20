@@ -31,6 +31,7 @@ import { NemesisSystem } from '@/components/features/NemesisSystem'
 import { BabelMind } from '@/components/features/BabelMind'
 import { TheVault } from '@/components/features/TheVault'
 import { CosmosClassroomPanel } from '@/components/features/CosmosClassroomPanel'
+import { Assessment } from '@/components/features/Assessment'
 import type { FeatureMode } from '@/lib/types'
 
 const FEATURE_PANELS: Partial<Record<FeatureMode, React.ComponentType>> = {
@@ -60,6 +61,7 @@ const FEATURE_PANELS: Partial<Record<FeatureMode, React.ComponentType>> = {
   'babel-mind': BabelMind,
   vault: TheVault,
   'cosmos-classroom': CosmosClassroomPanel,
+  assessment: Assessment,
 }
 
 export default function ChatPage() {

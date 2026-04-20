@@ -194,10 +194,17 @@ body::after {
 .text-display-2xl { font-size: clamp(2.5rem, 5vw, 4rem); font-family: var(--font-display); line-height: 1.1; letter-spacing: -0.02em; }
 .text-display-xl { font-size: clamp(2rem, 4vw, 3rem); font-family: var(--font-display); line-height: 1.15; letter-spacing: -0.02em; }
 .text-display-lg { font-size: clamp(1.5rem, 3vw, 2.25rem); font-family: var(--font-display); line-height: 1.2; letter-spacing: -0.01em; }
+.text-display-md { font-size: clamp(1.25rem, 2.5vw, 1.75rem); font-family: var(--font-display); line-height: 1.25; letter-spacing: -0.01em; }
+.text-display-sm { font-size: clamp(1rem, 2vw, 1.25rem); font-family: var(--font-display); line-height: 1.3; letter-spacing: -0.005em; }
+.text-display-xs { font-size: 0.9375rem; font-family: var(--font-display); line-height: 1.4; }
 .text-ui-xs { font-size: 0.6875rem; line-height: 1.4; }
 .text-ui-sm { font-size: 0.8125rem; line-height: 1.5; }
 .text-ui-base { font-size: 0.9375rem; line-height: 1.6; }
 .text-ui-lg { font-size: 1.0625rem; line-height: 1.6; }
+
+/* ── Shadow Utilities ──────────────────────────────────────── */
+.shadow-glow { box-shadow: var(--shadow-glow); }
+.shadow-glow-lg { box-shadow: var(--shadow-glow-lg); }
 
 /* ── Accent Glow Effects ───────────────────────────────────── */
 .glow-accent {

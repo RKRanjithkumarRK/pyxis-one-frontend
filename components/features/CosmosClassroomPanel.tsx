@@ -1,6 +1,12 @@
 'use client'
 
-import { CosmosClassroom } from '@/components/three/CosmosClassroom'
+import dynamic from 'next/dynamic'
+import { Skeleton } from '@/components/ui/Skeleton'
+
+const CosmosClassroom = dynamic(
+  () => import('@/components/three/CosmosClassroom').then((m) => m.CosmosClassroom),
+  { ssr: false, loading: () => <Skeleton className="w-full h-full" /> }
+)
 
 export function CosmosClassroomPanel() {
   return (

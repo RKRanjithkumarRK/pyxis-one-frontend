@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect } from 'react'
+import dynamic from 'next/dynamic'
 import { motion } from 'framer-motion'
 import { usePsycheStore } from '@/store/psycheStore'
 import { PSYCHE_DIMENSIONS } from '@/lib/constants'
@@ -8,7 +9,11 @@ import { Progress } from '@/components/ui/Progress'
 import { Skeleton } from '@/components/ui/Skeleton'
 import { getPsycheState } from '@/lib/api'
 import { useSessionStore } from '@/store/sessionStore'
-import { PsycheOrganism } from '@/components/three/PsycheOrganism'
+
+const PsycheOrganism = dynamic(
+  () => import('@/components/three/PsycheOrganism').then((m) => m.PsycheOrganism),
+  { ssr: false, loading: () => <Skeleton className="w-full h-full rounded-2xl" /> }
+)
 
 export function PsycheEngine() {
   const { dimensions, setDimensions } = usePsycheStore()

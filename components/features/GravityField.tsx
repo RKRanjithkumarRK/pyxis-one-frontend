@@ -1,11 +1,16 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import dynamic from 'next/dynamic'
 import { motion } from 'framer-motion'
 import { getGravityField } from '@/lib/api'
 import { useSessionStore } from '@/store/sessionStore'
-import { GravityField3D } from '@/components/three/GravityField3D'
 import { Skeleton } from '@/components/ui/Skeleton'
+
+const GravityField3D = dynamic(
+  () => import('@/components/three/GravityField3D').then((m) => m.GravityField3D),
+  { ssr: false, loading: () => <Skeleton className="w-full h-full rounded-2xl" /> }
+)
 
 interface ConceptNode {
   id: string

@@ -7,8 +7,13 @@ import { Button } from '@/components/ui/Button'
 import { getHelixRevolutions, reviewHelixCard } from '@/lib/api'
 import { useSessionStore } from '@/store/sessionStore'
 import { HELIX_REVOLUTIONS } from '@/lib/constants'
-import { HelixVisualizer3D } from '@/components/three/HelixVisualizer3D'
+import dynamic from 'next/dynamic'
 import { Skeleton } from '@/components/ui/Skeleton'
+
+const HelixVisualizer3D = dynamic(
+  () => import('@/components/three/HelixVisualizer3D').then((m) => m.HelixVisualizer3D),
+  { ssr: false, loading: () => <Skeleton className="w-full h-full rounded-2xl" /> }
+)
 
 interface CardState {
   concept: string

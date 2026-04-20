@@ -87,6 +87,10 @@ export const NAV_ITEMS: NavItem[] = [
   { id: 'voice', label: 'Voice Soul', icon: 'Mic', shortcut: '', description: 'Voice-based soul reading', color: '#ec4899' },
   { id: 'assessment', label: 'Assessment', icon: 'ClipboardList', shortcut: '', description: 'Procedural examination', color: '#6366f1' },
   { id: 'living-syllabus', label: 'Living Syllabus', icon: 'TreePine', shortcut: '', description: 'Dynamic knowledge tree', color: '#22c55e' },
+  { id: 'apex', label: 'Apex Mode', icon: 'Infinity', shortcut: '', description: 'All dimensions converge — maximum intelligence', color: '#fbbf24' },
+  { id: 'dominion', label: 'Dominion Scan', icon: 'Radar', shortcut: '', description: 'Complete knowledge territory mapping', color: '#7c3aed' },
+  { id: 'eternal', label: 'Eternal Archive', icon: 'Archive', shortcut: '', description: 'Cross-session memory empire', color: '#06b6d4' },
+  { id: 'transcendence', label: 'Transcendence Protocol', icon: 'Sparkles', shortcut: '', description: 'Multi-dimensional concept analysis', color: '#a855f7' },
 ]
 
 export const SPRING_CONFIG = {

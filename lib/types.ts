@@ -31,6 +31,10 @@ export type FeatureMode =
   | 'cosmos-classroom'
   | 'living-syllabus'
   | 'assessment'
+  | 'apex'
+  | 'dominion'
+  | 'eternal'
+  | 'transcendence'
 
 export type MessageRole = 'user' | 'assistant' | 'system'
 

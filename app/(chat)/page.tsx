@@ -32,6 +32,10 @@ import { BabelMind } from '@/components/features/BabelMind'
 import { TheVault } from '@/components/features/TheVault'
 import { CosmosClassroomPanel } from '@/components/features/CosmosClassroomPanel'
 import { Assessment } from '@/components/features/Assessment'
+import { ApexMode } from '@/components/features/ApexMode'
+import { DominionScan } from '@/components/features/DominionScan'
+import { EternalArchive } from '@/components/features/EternalArchive'
+import { TranscendenceProtocol } from '@/components/features/TranscendenceProtocol'
 import type { FeatureMode } from '@/lib/types'
 
 const FEATURE_PANELS: Partial<Record<FeatureMode, React.ComponentType>> = {
@@ -62,6 +66,10 @@ const FEATURE_PANELS: Partial<Record<FeatureMode, React.ComponentType>> = {
   vault: TheVault,
   'cosmos-classroom': CosmosClassroomPanel,
   assessment: Assessment,
+  apex: ApexMode,
+  dominion: DominionScan,
+  eternal: EternalArchive,
+  transcendence: TranscendenceProtocol,
 }
 
 export default function ChatPage() {

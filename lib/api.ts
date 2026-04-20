@@ -26,6 +26,15 @@ import { API_ENDPOINTS } from './constants'
 
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000'
 
+type Envelope<T> = { data: T; meta: Record<string, unknown>; errors: null }
+
+function unwrap<T>(json: unknown): T {
+  if (json && typeof json === 'object' && 'data' in json && 'meta' in json) {
+    return (json as Envelope<T>).data
+  }
+  return json as T
+}
+
 async function post<T>(path: string, body: Record<string, unknown>): Promise<T> {
   const res = await fetch(`${BASE}${path}`, {
     method: 'POST',
@@ -33,19 +42,21 @@ async function post<T>(path: string, body: Record<string, unknown>): Promise<T> 
     body: JSON.stringify(body),
   })
   if (!res.ok) {
-    const text = await res.text().catch(() => res.statusText)
-    throw new Error(`API ${path} failed (${res.status}): ${text}`)
+    const envelope = await res.json().catch(() => null) as { errors?: Array<{ message: string }> } | null
+    const message = envelope?.errors?.[0]?.message ?? `API error (${res.status})`
+    throw new Error(message)
   }
-  return res.json() as Promise<T>
+  return unwrap<T>(await res.json())
 }
 
 async function get<T>(path: string): Promise<T> {
   const res = await fetch(`${BASE}${path}`, { method: 'GET' })
   if (!res.ok) {
-    const text = await res.text().catch(() => res.statusText)
-    throw new Error(`API ${path} failed (${res.status}): ${text}`)
+    const envelope = await res.json().catch(() => null) as { errors?: Array<{ message: string }> } | null
+    const message = envelope?.errors?.[0]?.message ?? `API error (${res.status})`
+    throw new Error(message)
   }
-  return res.json() as Promise<T>
+  return unwrap<T>(await res.json())
 }
 
 // ── Streaming Chat ────────────────────────────────────────────────────────
@@ -335,7 +346,7 @@ export async function analyzeVoice(
     body: form,
   })
   if (!res.ok) throw new Error(`Voice analyze failed: ${res.status}`)
-  return res.json() as Promise<VoiceAnalysisResponse>
+  return unwrap<VoiceAnalysisResponse>(await res.json())
 }
 
 // ── Vault ─────────────────────────────────────────────────────────────────
@@ -506,7 +517,7 @@ export async function parliamentDebate(sessionId: string, query: string): Promis
 }
 
 export async function getForgeProgress(sessionId: string): Promise<unknown> {
-  return post('/api/forge/status', { session_id: sessionId, concept: '' }).catch(() => ({}))
+  return post('/v1/forge/status', { session_id: sessionId, concept: '' }).catch(() => ({}))
 }
 
 export async function getCurriculum(sessionId: string): Promise<unknown> {
@@ -553,7 +564,7 @@ export function alienMode(sessionId: string, concept: string, onChunk: (c: strin
 }
 
 export async function getLivingSyllabus(sessionId: string): Promise<unknown> {
-  return post('/api/curriculum/next', { session_id: sessionId }).catch(() => ({ tree: [] }))
+  return post('/v1/curriculum/next', { session_id: sessionId }).catch(() => ({ tree: [] }))
 }
 
 export async function getSymphonySequence(sessionId: string): Promise<unknown> {

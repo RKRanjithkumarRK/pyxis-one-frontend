@@ -3,6 +3,14 @@ import { persist } from 'zustand/middleware'
 import { nanoid } from 'nanoid'
 import type { Message, FeatureMode } from '@/lib/types'
 
+export interface SessionSummary {
+  id: string
+  title: string
+  timestamp: number
+  feature: FeatureMode
+  messageCount: number
+}
+
 interface SessionState {
   sessionId: string
   studentName: string
@@ -11,6 +19,7 @@ interface SessionState {
   isStreaming: boolean
   tokenCount: number
   sessionStart: number
+  sessions: SessionSummary[]
 
   // Actions
   initSession: () => void
@@ -23,6 +32,9 @@ interface SessionState {
   clearMessages: () => void
   addTokens: (count: number) => void
   branchFrom: (messageId: string) => void
+  switchSession: (id: string) => void
+  deleteSession: (id: string) => void
+  updateSessionTitle: (title: string) => void
 }
 
 export const useSessionStore = create<SessionState>()(
@@ -35,14 +47,75 @@ export const useSessionStore = create<SessionState>()(
       isStreaming: false,
       tokenCount: 0,
       sessionStart: Date.now(),
+      sessions: [],
 
-      initSession: () =>
+      initSession: () => {
+        const { sessionId, messages, currentFeature, sessions } = get()
+        // Save current session to history if it has messages
+        const firstUserMsg = messages.find((m) => m.role === 'user')
+        if (firstUserMsg) {
+          const existing = sessions.find((s) => s.id === sessionId)
+          const summary: SessionSummary = {
+            id: sessionId,
+            title: firstUserMsg.content.slice(0, 60) + (firstUserMsg.content.length > 60 ? '…' : ''),
+            timestamp: Date.now(),
+            feature: currentFeature,
+            messageCount: messages.length,
+          }
+          const updated = existing
+            ? sessions.map((s) => (s.id === sessionId ? summary : s))
+            : [summary, ...sessions].slice(0, 50) // keep max 50
+          set({ sessions: updated })
+        }
         set({
           sessionId: nanoid(),
           messages: [],
           tokenCount: 0,
           sessionStart: Date.now(),
-        }),
+          currentFeature: 'standard',
+        })
+      },
+
+      switchSession: (id) => {
+        const { sessionId, messages, currentFeature, sessions } = get()
+        // Save current session first
+        const firstUserMsg = messages.find((m) => m.role === 'user')
+        if (firstUserMsg) {
+          const existing = sessions.find((s) => s.id === sessionId)
+          const summary: SessionSummary = {
+            id: sessionId,
+            title: firstUserMsg.content.slice(0, 60) + (firstUserMsg.content.length > 60 ? '…' : ''),
+            timestamp: Date.now(),
+            feature: currentFeature,
+            messageCount: messages.length,
+          }
+          const updated = existing
+            ? sessions.map((s) => (s.id === sessionId ? summary : s))
+            : [summary, ...sessions].slice(0, 50)
+          set({ sessions: updated })
+        }
+        const target = sessions.find((s) => s.id === id)
+        set({
+          sessionId: id,
+          messages: [],
+          tokenCount: 0,
+          sessionStart: target?.timestamp ?? Date.now(),
+          currentFeature: target?.feature ?? 'standard',
+        })
+      },
+
+      deleteSession: (id) => {
+        set((state) => ({ sessions: state.sessions.filter((s) => s.id !== id) }))
+      },
+
+      updateSessionTitle: (title) => {
+        const { sessionId, sessions } = get()
+        set({
+          sessions: sessions.map((s) =>
+            s.id === sessionId ? { ...s, title } : s
+          ),
+        })
+      },
 
       setStudentName: (name) => set({ studentName: name }),
 
@@ -52,7 +125,19 @@ export const useSessionStore = create<SessionState>()(
           id: nanoid(),
           timestamp: Date.now(),
         }
-        set((state) => ({ messages: [...state.messages, fullMessage] }))
+        set((state) => {
+          const messages = [...state.messages, fullMessage]
+          // Auto-update session title from first user message
+          let sessions = state.sessions
+          if (fullMessage.role === 'user' && messages.filter((m) => m.role === 'user').length === 1) {
+            const title = fullMessage.content.slice(0, 60) + (fullMessage.content.length > 60 ? '…' : '')
+            const existing = sessions.find((s) => s.id === state.sessionId)
+            if (existing) {
+              sessions = sessions.map((s) => s.id === state.sessionId ? { ...s, title } : s)
+            }
+          }
+          return { messages, sessions }
+        })
         return fullMessage
       },
 
@@ -83,13 +168,9 @@ export const useSessionStore = create<SessionState>()(
       },
 
       setFeature: (feature) => set({ currentFeature: feature }),
-
       setStreaming: (streaming) => set({ isStreaming: streaming }),
-
       clearMessages: () => set({ messages: [], tokenCount: 0 }),
-
-      addTokens: (count) =>
-        set((state) => ({ tokenCount: state.tokenCount + count })),
+      addTokens: (count) => set((state) => ({ tokenCount: state.tokenCount + count })),
 
       branchFrom: (messageId) => {
         const { messages } = get()
@@ -105,7 +186,7 @@ export const useSessionStore = create<SessionState>()(
         studentName: state.studentName,
         currentFeature: state.currentFeature,
         sessionStart: state.sessionStart,
-        // Don't persist messages to keep storage small
+        sessions: state.sessions,
       }),
     }
   )

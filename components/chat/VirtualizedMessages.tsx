@@ -16,8 +16,17 @@ import { storeInVault } from '@/lib/api'
 import { cn } from '@/lib/utils'
 
 export function VirtualizedMessages() {
-  const { messages, sessionId, branchFrom } = useSessionStore()
+  const { messages, sessionId, branchFrom, addMessage } = useSessionStore()
   const { sendMessage } = useChat()
+
+  const handleEdit = useCallback((id: string, newContent: string) => {
+    // Branch from the edited message (removes it + everything after)
+    const idx = messages.findIndex((m) => m.id === id)
+    if (idx < 0) return
+    branchFrom(messages[idx - 1]?.id ?? id) // cut back to before user msg
+    // Re-send as new message
+    sendMessage(newContent)
+  }, [messages, branchFrom, sendMessage])
   const bottomRef = useRef<HTMLDivElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const [showScrollBtn, setShowScrollBtn] = useState(false)
@@ -90,8 +99,13 @@ export function VirtualizedMessages() {
             <MessageBubble
               key={msg.id}
               message={msg}
+              onRegenerate={msg.role === 'assistant' ? () => {
+                const prevUser = [...messages].slice(0, messages.findIndex(m => m.id === msg.id)).reverse().find(m => m.role === 'user')
+                if (prevUser) { branchFrom(prevUser.id); sendMessage(prevUser.content) }
+              } : undefined}
               onBranch={() => branchFrom(msg.id)}
               onBookmark={() => handleBookmark(msg.content)}
+              onEdit={handleEdit}
             />
           ))}
         </AnimatePresence>

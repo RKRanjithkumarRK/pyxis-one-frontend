@@ -8,6 +8,8 @@ interface UIState {
   activePanels: string[]
   commandBarOpen: boolean
   activePanel: string | null
+  settingsOpen: boolean
+  mobileSidebarOpen: boolean
 
   setTheme: (theme: Theme) => void
   toggleSidebar: () => void
@@ -18,6 +20,9 @@ interface UIState {
   openPanel: (panelId: string) => void
   closePanel: (panelId: string) => void
   setActivePanel: (panelId: string | null) => void
+  openSettings: () => void
+  closeSettings: () => void
+  toggleMobileSidebar: () => void
 }
 
 export const useUIStore = create<UIState>()(
@@ -28,6 +33,8 @@ export const useUIStore = create<UIState>()(
       activePanels: [],
       commandBarOpen: false,
       activePanel: null,
+      settingsOpen: false,
+      mobileSidebarOpen: false,
 
       setTheme: (theme) => {
         set({ theme })
@@ -62,6 +69,9 @@ export const useUIStore = create<UIState>()(
         })),
 
       setActivePanel: (panelId) => set({ activePanel: panelId }),
+      openSettings: () => set({ settingsOpen: true }),
+      closeSettings: () => set({ settingsOpen: false }),
+      toggleMobileSidebar: () => set((state) => ({ mobileSidebarOpen: !state.mobileSidebarOpen })),
     }),
     {
       name: 'pyxis-ui',

@@ -9,10 +9,7 @@ import { generateAssessment, submitAssessment } from '@/lib/api'
 import { useSessionStore } from '@/store/sessionStore'
 import type { AssessmentQuestion } from '@/lib/types'
 
-interface AnswerRecord {
-  question_id: string
-  answer: string
-}
+type AnswerRecord = Record<string, unknown>
 
 export function Assessment() {
   const { sessionId } = useSessionStore()

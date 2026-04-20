@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useRef } from 'react'
+import { toast } from 'sonner'
 import { useSessionStore } from '@/store/sessionStore'
 import { streamChat } from '@/lib/api'
 import { estimateTokens, generateId } from '@/lib/utils'
@@ -46,12 +47,12 @@ export function useChat() {
           finalizeLastMessage()
         },
         (err) => {
-          console.error('Chat stream error:', err)
-          updateLastAssistantMessage(
-            err.message.includes('credit') || err.message.includes('billing')
-              ? '⚠️ The AI service is temporarily unavailable (billing issue). Please try again later.'
-              : `⚠️ ${err.message}`
-          )
+          const isBilling = err.message.includes('credit') || err.message.includes('billing')
+          const userMessage = isBilling
+            ? 'AI service temporarily unavailable (billing issue). Try again later.'
+            : err.message || 'Something went wrong. Please try again.'
+          toast.error(userMessage, { duration: 5000 })
+          updateLastAssistantMessage(`⚠️ ${userMessage}`)
           finalizeLastMessage()
         }
       )

@@ -133,6 +133,32 @@ export async function streamChat(
   return controller
 }
 
+// ── Feedback ──────────────────────────────────────────────────────────────
+
+export async function submitFeedback(
+  messageId: string,
+  sessionId: string,
+  rating: 'up' | 'down',
+  comment?: string
+): Promise<void> {
+  await post('/v1/chat/feedback', { message_id: messageId, session_id: sessionId, rating, comment })
+}
+
+export async function exportConversation(
+  sessionId: string,
+  fmt: 'json' | 'txt' = 'json'
+): Promise<void> {
+  const res = await fetch(`${BASE}/v1/chat/export/${sessionId}?fmt=${fmt}`)
+  if (!res.ok) throw new Error('Export failed')
+  const blob = await res.blob()
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `pyxis_${sessionId.slice(0, 8)}.${fmt}`
+  a.click()
+  URL.revokeObjectURL(url)
+}
+
 // ── Chat History ──────────────────────────────────────────────────────────
 
 export async function getChatHistory(

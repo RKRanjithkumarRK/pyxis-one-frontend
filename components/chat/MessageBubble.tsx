@@ -7,10 +7,13 @@ import remarkGfm from 'remark-gfm'
 import remarkMath from 'remark-math'
 import rehypeKatex from 'rehype-katex'
 import { ChevronDown, ChevronUp, Copy, Check, ThumbsUp, ThumbsDown, Pencil, X } from 'lucide-react'
+import { toast } from 'sonner'
 import { Badge } from '@/components/ui/Badge'
 import { StreamingCursor } from './StreamingCursor'
 import { MessageActions } from './MessageActions'
 import { cn, extractConfidenceTags, formatRelativeTime, copyToClipboard } from '@/lib/utils'
+import { submitFeedback } from '@/lib/api'
+import { useSessionStore } from '@/store/sessionStore'
 import type { Message, ConfidenceTag } from '@/lib/types'
 
 const tagVariantMap: Record<ConfidenceTag, 'verified' | 'consensus' | 'debated' | 'speculative'> = {
@@ -86,8 +89,22 @@ export function MessageBubble({ message, onRegenerate, onBranch, onBookmark, onE
   const [feedback, setFeedback] = useState<'up' | 'down' | null>(null)
   const [editing, setEditing] = useState(false)
   const [editValue, setEditValue] = useState(message.content)
+  const { sessionId } = useSessionStore()
   const isUser = message.role === 'user'
   const confidenceTags = extractConfidenceTags(message.content)
+
+  const handleFeedback = useCallback(async (rating: 'up' | 'down') => {
+    const next = feedback === rating ? null : rating
+    setFeedback(next)
+    if (next) {
+      try {
+        await submitFeedback(message.id, sessionId, next)
+        toast.success(next === 'up' ? 'Thanks for the positive feedback!' : 'Feedback noted — we\'ll improve.', { duration: 2000 })
+      } catch {
+        // Non-critical — don't interrupt the user
+      }
+    }
+  }, [feedback, message.id, sessionId])
 
   const handleSaveEdit = useCallback(() => {
     if (editValue.trim() && onEdit) {
@@ -239,7 +256,7 @@ export function MessageBubble({ message, onRegenerate, onBranch, onBookmark, onE
               {hovered && !message.isStreaming && (
                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex items-center gap-0.5 ml-1">
                   <button
-                    onClick={() => setFeedback(f => f === 'up' ? null : 'up')}
+                    onClick={() => void handleFeedback('up')}
                     className={cn(
                       'p-1.5 rounded-lg transition-all',
                       feedback === 'up'
@@ -250,7 +267,7 @@ export function MessageBubble({ message, onRegenerate, onBranch, onBookmark, onE
                     <ThumbsUp size={12} />
                   </button>
                   <button
-                    onClick={() => setFeedback(f => f === 'down' ? null : 'down')}
+                    onClick={() => void handleFeedback('down')}
                     className={cn(
                       'p-1.5 rounded-lg transition-all',
                       feedback === 'down'

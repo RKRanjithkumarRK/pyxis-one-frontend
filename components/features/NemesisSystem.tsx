@@ -5,6 +5,7 @@ import { motion } from 'framer-motion'
 import { Swords } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Textarea } from '@/components/ui/Textarea'
+import { FeatureLoading, EmptyState } from '@/components/ui/EmptyState'
 import { getNemesis, nemesisChallenge } from '@/lib/api'
 import { useSessionStore } from '@/store/sessionStore'
 import { StreamingCursor } from '@/components/chat/StreamingCursor'
@@ -13,12 +14,17 @@ import ReactMarkdown from 'react-markdown'
 export function NemesisSystem() {
   const { sessionId } = useSessionStore()
   const [nemesisData, setNemesisData] = useState<{ name?: string; current_challenge?: string } | null>(null)
+  const [loading, setLoading] = useState(true)
   const [answer, setAnswer] = useState('')
   const [response, setResponse] = useState('')
   const [streaming, setStreaming] = useState(false)
 
   useEffect(() => {
-    getNemesis(sessionId).then((d) => setNemesisData(d as { name?: string; current_challenge?: string })).catch(() => {})
+    setLoading(true)
+    getNemesis(sessionId)
+      .then((d) => setNemesisData(d as { name?: string; current_challenge?: string }))
+      .catch(() => {})
+      .finally(() => setLoading(false))
   }, [sessionId])
 
   const handleChallenge = async () => {
@@ -44,7 +50,18 @@ export function NemesisSystem() {
         <p className="text-xs text-[var(--text-muted)] mt-0.5">An adversarial AI forged from your exact weaknesses</p>
       </div>
 
-      {nemesisData && (
+      {loading ? (
+        <FeatureLoading rows={2} showHeader={false} />
+      ) : !nemesisData?.current_challenge ? (
+        <EmptyState
+          icon={Swords}
+          title="No nemesis profile yet"
+          description="Start chatting to build your cognitive profile — your Nemesis emerges from your patterns."
+          color="#dc2626"
+        />
+      ) : null}
+
+      {!loading && nemesisData && (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
           className="glass-elevated rounded-2xl p-4 border border-red-500/20"
         >

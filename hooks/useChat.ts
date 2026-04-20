@@ -47,6 +47,11 @@ export function useChat() {
         },
         (err) => {
           console.error('Chat stream error:', err)
+          updateLastAssistantMessage(
+            err.message.includes('credit') || err.message.includes('billing')
+              ? '⚠️ The AI service is temporarily unavailable (billing issue). Please try again later.'
+              : `⚠️ ${err.message}`
+          )
           finalizeLastMessage()
         }
       )

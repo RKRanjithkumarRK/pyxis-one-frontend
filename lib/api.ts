@@ -89,10 +89,15 @@ export async function streamChat(
           for (const line of lines) {
             if (!line.startsWith('data: ')) continue
             try {
-              const data = JSON.parse(line.slice(6)) as { type: string; content?: string }
+              const data = JSON.parse(line.slice(6)) as { type: string; content?: string; message?: string }
               if (data.type === 'text' && data.content) {
                 onChunk(data.content)
               } else if (data.type === 'done') {
+                onDone()
+                return
+              } else if (data.type === 'error') {
+                const msg = data.message ?? 'Stream error'
+                onError?.(new Error(msg))
                 onDone()
                 return
               }

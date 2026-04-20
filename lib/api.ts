@@ -133,6 +133,18 @@ export async function streamChat(
   return controller
 }
 
+// ── Chat History ──────────────────────────────────────────────────────────
+
+export async function getChatHistory(
+  sessionId: string,
+  limit = 100
+): Promise<Array<{ id: string; role: string; content: string; timestamp: string; feature_mode: string | null }>> {
+  const result = await get<{ session_id: string; messages: Array<{ id: string; role: string; content: string; timestamp: string; feature_mode: string | null }> }>(
+    `/v1/chat/history/${sessionId}?limit=${limit}`
+  )
+  return result.messages
+}
+
 // ── Trident ───────────────────────────────────────────────────────────────
 
 export async function streamTrident(

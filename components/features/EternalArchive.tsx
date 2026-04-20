@@ -49,7 +49,7 @@ export function EternalArchive() {
       : query
 
     try {
-      const res = await fetch(`${BASE}/api/chat/stream`, {
+      const res = await fetch(`${BASE}/v1/chat/stream`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ session_id: sessionId, message: context, feature_mode: 'eternal' }),

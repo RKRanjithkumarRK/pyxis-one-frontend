@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { nanoid } from 'nanoid'
 import type { Message, FeatureMode } from '@/lib/types'
+import { getChatHistory } from '@/lib/api'
 
 export interface SessionSummary {
   id: string
@@ -32,7 +33,7 @@ interface SessionState {
   clearMessages: () => void
   addTokens: (count: number) => void
   branchFrom: (messageId: string) => void
-  switchSession: (id: string) => void
+  switchSession: (id: string) => Promise<void>
   deleteSession: (id: string) => void
   updateSessionTitle: (title: string) => void
 }
@@ -76,9 +77,9 @@ export const useSessionStore = create<SessionState>()(
         })
       },
 
-      switchSession: (id) => {
+      switchSession: async (id) => {
         const { sessionId, messages, currentFeature, sessions } = get()
-        // Save current session first
+        // Save current session summary first
         const firstUserMsg = messages.find((m) => m.role === 'user')
         if (firstUserMsg) {
           const existing = sessions.find((s) => s.id === sessionId)
@@ -102,6 +103,21 @@ export const useSessionStore = create<SessionState>()(
           sessionStart: target?.timestamp ?? Date.now(),
           currentFeature: target?.feature ?? 'standard',
         })
+        // Restore messages from backend
+        try {
+          const history = await getChatHistory(id, 100)
+          const restored: Message[] = history.map((m) => ({
+            id: m.id,
+            role: m.role as 'user' | 'assistant',
+            content: m.content,
+            timestamp: new Date(m.timestamp).getTime(),
+            feature_mode: (m.feature_mode as FeatureMode) ?? 'standard',
+            isStreaming: false,
+          }))
+          set({ messages: restored })
+        } catch {
+          // Backend unavailable — leave messages empty, session ID is correct
+        }
       },
 
       deleteSession: (id) => {
@@ -187,6 +203,8 @@ export const useSessionStore = create<SessionState>()(
         currentFeature: state.currentFeature,
         sessionStart: state.sessionStart,
         sessions: state.sessions,
+        // Keep last 150 messages — enough for full recall, within localStorage budget
+        messages: state.messages.slice(-150),
       }),
     }
   )

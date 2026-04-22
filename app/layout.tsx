@@ -7,8 +7,8 @@ import './globals.css'
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' })
 
 export const metadata: Metadata = {
-  title: 'Pyxis One',
-  description: 'Your intelligent learning companion',
+  title: 'Pyxis',
+  description: 'Pyxis — AI at your fingertips',
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

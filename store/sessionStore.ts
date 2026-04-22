@@ -73,7 +73,7 @@ export const useSessionStore = create<SessionState>()(
       sessionStart: Date.now(),
       sessions: [],
       conversationId: null,
-      selectedModel: 'claude-sonnet-4-6',
+      selectedModel: 'gemini-2.0-flash',
       enableWebSearch: false,
       pendingFiles: [],
 

@@ -129,7 +129,7 @@ export interface ConversationMessages {
 export interface AIModel {
   id: string
   name: string
-  provider: 'openai' | 'groq' | 'gemini'
+  provider: 'openai' | 'groq' | 'gemini' | 'cerebras' | 'mistral' | 'sambanova'
   context_window: number
   description: string
   tier: 'free' | 'pro' | 'enterprise'

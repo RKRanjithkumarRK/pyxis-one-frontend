@@ -3,6 +3,7 @@
 import { useSessionStore } from '@/store/sessionStore'
 import { ChatInterface } from '@/components/chat/ChatInterface'
 import { PanelSystem } from '@/components/layout/PanelSystem'
+import { WorkspacePanel } from '@/components/workspace/WorkspacePanel'
 
 // Feature panels
 import { PsycheEngine } from '@/components/features/PsycheEngine'
@@ -72,15 +73,28 @@ const FEATURE_PANELS: Partial<Record<FeatureMode, React.ComponentType>> = {
   transcendence: TranscendenceProtocol,
 }
 
+const WORKSPACE_IDS = new Set(['think', 'create', 'research', 'manage'])
+
 export default function ChatPage() {
-  const { currentFeature: activeFeature } = useSessionStore()
+  const { currentFeature: activeFeature, currentWorkspace } = useSessionStore()
   const FeaturePanel = activeFeature ? FEATURE_PANELS[activeFeature] : null
 
+  // Legacy feature panel takes precedence when a specific feature mode is active
   if (FeaturePanel) {
     return (
       <PanelSystem
         left={<ChatInterface />}
         right={<FeaturePanel />}
+      />
+    )
+  }
+
+  // Default: show WorkspacePanel for unified workspace modes
+  if (WORKSPACE_IDS.has(currentWorkspace)) {
+    return (
+      <PanelSystem
+        left={<ChatInterface />}
+        right={<WorkspacePanel />}
       />
     )
   }

@@ -2,11 +2,14 @@
 
 import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { AlertTriangle, CheckCircle, X } from 'lucide-react'
+import { AlertTriangle, X, Zap } from 'lucide-react'
 
 interface HealthData {
   status: string
-  api_key_configured: boolean
+  ready: boolean
+  providers: string[]
+  // legacy field (old backends)
+  api_key_configured?: boolean
 }
 
 export function SetupBanner() {
@@ -25,8 +28,13 @@ export function SetupBanner() {
   if (dismissed) return null
   if (!health && !backendDown) return null
 
-  const allGood = health?.status === 'ok' && health?.api_key_configured
+  // Support both new `ready` field and legacy `api_key_configured`
+  const hasProviders =
+    health?.ready ||
+    health?.api_key_configured ||
+    (health?.providers && health.providers.length > 0)
 
+  const allGood = health?.status === 'ok' && hasProviders
   if (allGood) return null
 
   return (
@@ -41,19 +49,25 @@ export function SetupBanner() {
           <AlertTriangle size={13} className="flex-shrink-0" />
           {backendDown ? (
             <span>
-              Backend offline — run <code className="bg-black/30 px-1 rounded">python main.py</code> in <code className="bg-black/30 px-1 rounded">pyxis-one-backend</code>
+              Backend offline — run{' '}
+              <code className="bg-black/30 px-1 rounded">uvicorn main:app --reload</code> in{' '}
+              <code className="bg-black/30 px-1 rounded">pyxis-one-backend</code>
             </span>
-          ) : !health?.api_key_configured ? (
+          ) : (
             <span>
-              Anthropic API key not set — get yours at{' '}
-              <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noreferrer" className="underline hover:text-amber-200">
-                console.anthropic.com
-              </a>
-              , then add it to <code className="bg-black/30 px-1 rounded">pyxis-one-backend/.env</code> and restart the backend
+              No AI provider configured — add at least one of{' '}
+              <code className="bg-black/30 px-1 rounded">GROQ_API_KEY</code>,{' '}
+              <code className="bg-black/30 px-1 rounded">GEMINI_API_KEY</code>,{' '}
+              <code className="bg-black/30 px-1 rounded">OPENROUTER_API_KEY</code>, or{' '}
+              <code className="bg-black/30 px-1 rounded">SAMBANOVA_API_KEY</code> to{' '}
+              <code className="bg-black/30 px-1 rounded">pyxis-one-backend/.env</code> — all free
             </span>
-          ) : null}
+          )}
         </div>
-        <button onClick={() => setDismissed(true)} className="text-amber-400 hover:text-amber-200 ml-3 flex-shrink-0">
+        <button
+          onClick={() => setDismissed(true)}
+          className="text-amber-400 hover:text-amber-200 ml-3 flex-shrink-0"
+        >
           <X size={13} />
         </button>
       </motion.div>

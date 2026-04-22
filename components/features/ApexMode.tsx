@@ -33,7 +33,7 @@ export function ApexMode() {
     setResponse('')
 
     try {
-      const res = await fetch(`${BASE}/v1/chat/stream`, {
+      const res = await fetch(`${BASE}/api/chat/stream`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ session_id: sessionId, message: input, feature_mode: 'apex' }),

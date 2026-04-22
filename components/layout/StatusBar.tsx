@@ -5,8 +5,7 @@ import { motion } from 'framer-motion'
 import { Moon, Sun, Sparkles } from 'lucide-react'
 import { useSessionStore } from '@/store/sessionStore'
 import { useUIStore } from '@/store/uiStore'
-import { formatDuration, getFeatureColor } from '@/lib/utils'
-import { NAV_ITEMS } from '@/lib/constants'
+import { formatDuration } from '@/lib/utils'
 import type { Theme } from '@/lib/types'
 
 const THEMES: Theme[] = ['cosmos', 'obsidian', 'holographic']
@@ -16,8 +15,24 @@ const THEME_LABELS: Record<Theme, string> = {
   holographic: 'Holographic',
 }
 
+type Workspace = 'think' | 'create' | 'research' | 'manage'
+
+const WORKSPACE_LABELS: Record<Workspace, string> = {
+  think: 'Think',
+  create: 'Create',
+  research: 'Research',
+  manage: 'Manage',
+}
+
+const WORKSPACE_COLORS: Record<Workspace, string> = {
+  think: '#6366f1',
+  create: '#10b981',
+  research: '#06b6d4',
+  manage: '#f59e0b',
+}
+
 export function StatusBar() {
-  const { currentFeature, isStreaming, tokenCount, sessionStart } = useSessionStore()
+  const { currentWorkspace, isStreaming, tokenCount, sessionStart } = useSessionStore()
   const { theme, setTheme } = useUIStore()
   const [elapsed, setElapsed] = useState(0)
 
@@ -28,8 +43,9 @@ export function StatusBar() {
     return () => clearInterval(interval)
   }, [sessionStart])
 
-  const navItem = NAV_ITEMS.find((n) => n.id === currentFeature)
-  const featureColor = getFeatureColor(currentFeature)
+  const workspace = (currentWorkspace ?? 'think') as Workspace
+  const workspaceColor = WORKSPACE_COLORS[workspace]
+  const workspaceLabel = WORKSPACE_LABELS[workspace]
 
   const cycleTheme = () => {
     const idx = THEMES.indexOf(theme)
@@ -41,14 +57,14 @@ export function StatusBar() {
       className="h-8 border-t border-[var(--border-subtle)] glass flex items-center px-3 gap-4 text-xs text-[var(--text-muted)] flex-shrink-0 z-30"
       style={{ height: 'var(--statusbar-height)' }}
     >
-      {/* Left: feature mode */}
+      {/* Left: active workspace */}
       <div className="flex items-center gap-1.5 min-w-0">
         <span
           className="w-1.5 h-1.5 rounded-full flex-shrink-0"
-          style={{ backgroundColor: featureColor }}
+          style={{ backgroundColor: workspaceColor }}
         />
         <span className="truncate text-[var(--text-secondary)]">
-          {navItem?.label ?? 'Standard Chat'}
+          {workspaceLabel}
         </span>
       </div>
 

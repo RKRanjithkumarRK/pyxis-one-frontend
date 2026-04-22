@@ -39,7 +39,7 @@ export function TranscendenceProtocol() {
     const prompt = `TRANSCENDENCE PROTOCOL — analyze "${concept}" through ALL of these simultaneous dimensions: ${activeDims.join(', ')}. For each dimension, reveal a completely different truth about this concept. Make the multi-dimensional nature feel like seeing the concept for the first time from every angle simultaneously.`
 
     try {
-      const res = await fetch(`${BASE}/v1/chat/stream`, {
+      const res = await fetch(`${BASE}/api/chat/stream`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ session_id: sessionId, message: prompt, feature_mode: 'transcendence' }),

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ChevronDown, Zap, Cpu, Sparkles, Check } from 'lucide-react'
+import { ChevronDown, Zap, Cpu, Sparkles, Check, Wind, Brain, Flame } from 'lucide-react'
 import { listModels } from '@/lib/api'
 import { useSessionStore } from '@/store/sessionStore'
 import type { AIModel } from '@/lib/types'
@@ -10,15 +10,16 @@ import { cn } from '@/lib/utils'
 
 // ── Provider metadata ────────────────────────────────────────────────────────
 
-const PROVIDERS = ['groq', 'gemini', 'openai'] as const
-type Provider = (typeof PROVIDERS)[number]
+type Provider = 'groq' | 'gemini' | 'cerebras' | 'mistral' | 'sambanova' | 'openai'
+
+const PROVIDERS: Provider[] = ['groq', 'gemini', 'cerebras', 'mistral', 'sambanova', 'openai']
 
 const PROVIDER_META: Record<Provider, {
-  label: string
-  icon: React.ReactNode
-  color: string          // text colour
-  badge: string          // pill text
-  badgeColor: string     // pill bg
+  label:      string
+  icon:       React.ReactNode
+  color:      string
+  badge:      string
+  badgeColor: string
 }> = {
   groq: {
     label:      'Groq',
@@ -34,6 +35,27 @@ const PROVIDER_META: Record<Provider, {
     badge:      'Free · 1M+ ctx',
     badgeColor: 'bg-violet-500/10 text-violet-400',
   },
+  cerebras: {
+    label:      'Cerebras',
+    icon:       <Flame size={12} />,
+    color:      'text-orange-400',
+    badge:      'Free · 2K tok/s',
+    badgeColor: 'bg-orange-500/10 text-orange-400',
+  },
+  mistral: {
+    label:      'Mistral',
+    icon:       <Wind size={12} />,
+    color:      'text-rose-400',
+    badge:      'Free · EU-made',
+    badgeColor: 'bg-rose-500/10 text-rose-400',
+  },
+  sambanova: {
+    label:      'SambaNova',
+    icon:       <Brain size={12} />,
+    color:      'text-amber-400',
+    badge:      'Free · DeepSeek',
+    badgeColor: 'bg-amber-500/10 text-amber-400',
+  },
   openai: {
     label:      'OpenAI',
     icon:       <Zap size={12} />,
@@ -47,98 +69,27 @@ const PROVIDER_META: Record<Provider, {
 
 const FALLBACK_MODELS: AIModel[] = [
   // Groq
-  {
-    id: 'llama-3.3-70b-versatile',
-    name: 'Llama 3.3 70B',
-    provider: 'groq',
-    context_window: 128_000,
-    description: "Meta's best open model — balanced speed & quality",
-    tier: 'free',
-    strengths: ['reasoning', 'coding'],
-    available: true,
-  },
-  {
-    id: 'llama-3.1-8b-instant',
-    name: 'Llama 3.1 8B',
-    provider: 'groq',
-    context_window: 128_000,
-    description: 'Lightning-fast — best for quick answers',
-    tier: 'free',
-    strengths: ['speed'],
-    available: true,
-  },
-  {
-    id: 'mixtral-8x7b-32768',
-    name: 'Mixtral 8x7B',
-    provider: 'groq',
-    context_window: 32_768,
-    description: 'Mixture-of-experts — great for long documents',
-    tier: 'free',
-    strengths: ['reasoning', 'long-context'],
-    available: true,
-  },
-  {
-    id: 'gemma2-9b-it',
-    name: 'Gemma 2 9B',
-    provider: 'groq',
-    context_window: 8_192,
-    description: "Google's efficient open model via Groq",
-    tier: 'free',
-    strengths: ['speed'],
-    available: true,
-  },
+  { id: 'llama-3.3-70b-versatile',  name: 'Llama 3.3 70B',      provider: 'groq',      context_window: 128_000,   description: "Meta's best open model — strong reasoning & coding", tier: 'free', strengths: ['reasoning', 'coding'],              available: true },
+  { id: 'llama-3.1-8b-instant',     name: 'Llama 3.1 8B',       provider: 'groq',      context_window: 128_000,   description: 'Fastest responses — ideal for quick queries',          tier: 'free', strengths: ['speed'],                          available: true },
+  { id: 'mixtral-8x7b-32768',       name: 'Mixtral 8x7B',       provider: 'groq',      context_window: 32_768,    description: 'Mixture-of-experts — great for long documents',        tier: 'free', strengths: ['reasoning', 'long-context'],      available: true },
+  { id: 'gemma2-9b-it',             name: 'Gemma 2 9B',         provider: 'groq',      context_window: 8_192,     description: 'Google open model — compact & efficient',              tier: 'free', strengths: ['speed'],                          available: true },
   // Gemini
-  {
-    id: 'gemini-2.0-flash',
-    name: 'Gemini 2.0 Flash',
-    provider: 'gemini',
-    context_window: 1_048_576,
-    description: "Google's fastest 2.0 model — 1M context",
-    tier: 'free',
-    strengths: ['speed', 'vision', 'long-context'],
-    available: true,
-  },
-  {
-    id: 'gemini-1.5-pro',
-    name: 'Gemini 1.5 Pro',
-    provider: 'gemini',
-    context_window: 2_097_152,
-    description: '2M context — strongest reasoning & analysis',
-    tier: 'pro',
-    strengths: ['reasoning', 'vision', 'coding'],
-    available: true,
-  },
-  {
-    id: 'gemini-1.5-flash',
-    name: 'Gemini 1.5 Flash',
-    provider: 'gemini',
-    context_window: 1_048_576,
-    description: 'Fast and efficient — 1M context',
-    tier: 'free',
-    strengths: ['speed', 'long-context'],
-    available: true,
-  },
+  { id: 'gemini-2.0-flash',         name: 'Gemini 2.0 Flash',   provider: 'gemini',    context_window: 1_048_576, description: "Google's flagship free model — 1M context, vision",   tier: 'free', strengths: ['speed', 'vision', 'long-context'], available: true },
+  { id: 'gemini-1.5-flash',         name: 'Gemini 1.5 Flash',   provider: 'gemini',    context_window: 1_048_576, description: 'Stable & efficient — 1M context window',               tier: 'free', strengths: ['speed', 'long-context'],          available: true },
+  // Cerebras
+  { id: 'cerebras/llama-3.3-70b',   name: 'Llama 3.3 70B',      provider: 'cerebras',  context_window: 128_000,   description: '1,000 tok/s — Llama 70B at unprecedented speed',      tier: 'free', strengths: ['speed', 'reasoning'],             available: true },
+  { id: 'cerebras/llama3.1-8b',     name: 'Llama 3.1 8B',       provider: 'cerebras',  context_window: 128_000,   description: '2,000 tok/s — the fastest 8B model available',        tier: 'free', strengths: ['speed'],                          available: true },
+  // Mistral
+  { id: 'mistral-small-3.1-24b-instruct', name: 'Mistral Small 3.1', provider: 'mistral', context_window: 128_000, description: "Mistral's best free model — vision + function calling", tier: 'free', strengths: ['reasoning', 'coding', 'vision'], available: true },
+  { id: 'codestral-2501',           name: 'Codestral',          provider: 'mistral',   context_window: 256_000,   description: 'Specialised code model — 256K context',                tier: 'free', strengths: ['coding'],                         available: true },
+  { id: 'open-mistral-nemo',        name: 'Mistral Nemo 12B',   provider: 'mistral',   context_window: 128_000,   description: 'Compact multilingual model',                           tier: 'free', strengths: ['speed', 'multilingual'],          available: true },
+  // SambaNova
+  { id: 'sambanova/deepseek-v3',    name: 'DeepSeek V3',        provider: 'sambanova', context_window: 64_000,    description: 'Top-tier coding & reasoning — rivals GPT-4o free',    tier: 'free', strengths: ['coding', 'reasoning', 'math'],    available: true },
+  { id: 'sambanova/qwen2.5-72b',    name: 'Qwen 2.5 72B',       provider: 'sambanova', context_window: 32_768,    description: 'Alibaba 72B — excellent multilingual & math',          tier: 'free', strengths: ['reasoning', 'math', 'multilingual'], available: true },
+  { id: 'sambanova/llama-3.3-70b',  name: 'Llama 3.3 70B',      provider: 'sambanova', context_window: 8_192,     description: 'Meta 70B on SambaNova silicon',                        tier: 'free', strengths: ['reasoning'],                      available: true },
   // OpenAI
-  {
-    id: 'gpt-4o',
-    name: 'GPT-4o',
-    provider: 'openai',
-    context_window: 128_000,
-    description: "OpenAI's flagship — best tools & coding",
-    tier: 'pro',
-    strengths: ['coding', 'tools', 'vision'],
-    available: true,
-  },
-  {
-    id: 'gpt-4o-mini',
-    name: 'GPT-4o Mini',
-    provider: 'openai',
-    context_window: 128_000,
-    description: 'Cost-efficient with strong reasoning',
-    tier: 'free',
-    strengths: ['speed', 'coding'],
-    available: true,
-  },
+  { id: 'gpt-4o',                   name: 'GPT-4o',             provider: 'openai',    context_window: 128_000,   description: 'Best tool use, vision & coding — requires API key',   tier: 'pro',  strengths: ['coding', 'tools', 'vision'],      available: true },
+  { id: 'gpt-4o-mini',              name: 'GPT-4o Mini',        provider: 'openai',    context_window: 128_000,   description: 'Cost-efficient OpenAI model',                          tier: 'free', strengths: ['speed', 'coding'],                available: true },
 ]
 
 // ── Context-window label: show K or M ────────────────────────────────────────
@@ -216,7 +167,7 @@ export default function ModelSelector() {
             </div>
 
             {/* Provider sections */}
-            <div className="max-h-[420px] overflow-y-auto scrollbar-thin scrollbar-thumb-white/10">
+            <div className="max-h-[480px] overflow-y-auto scrollbar-thin scrollbar-thumb-white/10">
               {PROVIDERS.map((provider) => {
                 const providerModels = models.filter((m) => m.provider === provider)
                 if (providerModels.length === 0) return null
@@ -258,7 +209,7 @@ export default function ModelSelector() {
             {/* Footer note */}
             <div className="px-3 py-2 border-t border-white/5">
               <p className="text-[10px] text-white/25">
-                Auto-routing picks the best model per query. Override anytime.
+                6 providers · 16 free models · 2 paid. Auto-fallback on error.
               </p>
             </div>
           </motion.div>

@@ -35,7 +35,7 @@ export function DominionScan() {
 
     try {
       const prompt = `DOMINION SCAN initiated on: "${topic}". Map my complete knowledge territory. Identify: (1) what I genuinely master, (2) what I think I know but don't, (3) critical gaps that could undermine everything. Be surgical and ruthless. Produce a complete dominion map.`
-      const res = await fetch(`${BASE}/v1/chat/stream`, {
+      const res = await fetch(`${BASE}/api/chat/stream`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ session_id: sessionId, message: prompt, feature_mode: 'dominion' }),

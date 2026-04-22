@@ -59,78 +59,254 @@ async function get<T>(path: string): Promise<T> {
   return unwrap<T>(await res.json())
 }
 
-// ── Streaming Chat ────────────────────────────────────────────────────────
+// ── Streaming Chat (upgraded) ─────────────────────────────────────────────
 
-export async function streamChat(
+export interface StreamChatOptions {
+  sessionId: string
+  message: string
+  featureMode?: string
+  conversationId?: string
+  model?: string
+  branchIndex?: number
+  regenerationAttempt?: number
+  enableWebSearch?: boolean
+  fileIds?: string[]
+  onChunk: (chunk: string) => void
+  onToolStart?: (name: string, label: string, callId: string) => void
+  onToolDone?: (callId: string, result: string) => void
+  onThinking?: (text: string) => void
+  onModelSelected?: (model: string, provider: string, intent: string) => void
+  onConversationCreated?: (conversationId: string) => void
+  onUsage?: (usage: TokenUsage) => void
+  onDone: (finishReason?: string) => void
+  onError?: (err: Error, code?: string) => void
+}
+
+export function streamChat(opts: StreamChatOptions): AbortController {
+  const controller = new AbortController()
+
+  const body = {
+    session_id: opts.sessionId,
+    message: opts.message,
+    feature_mode: opts.featureMode ?? 'standard',
+    conversation_id: opts.conversationId ?? null,
+    model: opts.model ?? null,
+    branch_index: opts.branchIndex ?? 0,
+    regeneration_attempt: opts.regenerationAttempt ?? 0,
+    enable_web_search: opts.enableWebSearch ?? false,
+    file_ids: opts.fileIds ?? null,
+  }
+
+  ;(async () => {
+    try {
+      const res = await fetch(`${BASE}${API_ENDPOINTS.CHAT_STREAM}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+        signal: controller.signal,
+      })
+
+      if (!res.ok || !res.body) {
+        const errData = await res.json().catch(() => null) as Record<string, unknown> | null
+        const msg = (errData?.detail as string) ?? `Stream failed: ${res.status}`
+        opts.onError?.(new Error(msg), String(res.status))
+        opts.onDone()
+        return
+      }
+
+      const reader = res.body.getReader()
+      const decoder = new TextDecoder()
+      let buffer = ''
+
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+
+        buffer += decoder.decode(value, { stream: true })
+        const lines = buffer.split('\n')
+        buffer = lines.pop() ?? ''  // keep incomplete last line
+
+        for (const line of lines) {
+          if (!line.startsWith('data: ')) continue
+          try {
+            const data = JSON.parse(line.slice(6)) as Record<string, unknown>
+            const type = data.type as string
+
+            if (type === 'text' && data.content) {
+              opts.onChunk(data.content as string)
+
+            } else if (type === 'thinking' && data.content) {
+              opts.onThinking?.(data.content as string)
+
+            } else if (type === 'tool_start') {
+              const toolName = data.tool_name as string
+              const callId = (data.tool_call_id as string) ?? ''
+              const labels: Record<string, string> = {
+                web_search: `Searching: ${(data.content as string) ?? '...'}`,
+                code_interpreter: 'Running code...',
+                read_file: 'Reading file...',
+              }
+              opts.onToolStart?.(toolName, labels[toolName] ?? toolName, callId)
+
+            } else if (type === 'tool_result') {
+              opts.onToolDone?.(
+                (data.tool_call_id as string) ?? '',
+                (data.content as string) ?? ''
+              )
+
+            } else if (type === 'model_selected') {
+              try {
+                const info = JSON.parse(data.content as string) as Record<string, string>
+                opts.onModelSelected?.(info.model, info.provider, info.intent)
+              } catch { /* ignore */ }
+
+            } else if (type === 'done') {
+              const usage = data.usage as TokenUsage | undefined
+              if (usage) opts.onUsage?.(usage)
+              opts.onDone('stop')
+              return
+
+            } else if (type === 'error') {
+              const msg = (data.content as string) ?? 'Stream error'
+              opts.onError?.(new Error(msg), data.error_code as string | undefined)
+              opts.onDone('error')
+              return
+            }
+          } catch { /* skip malformed lines */ }
+        }
+      }
+      opts.onDone()
+    } catch (err) {
+      if (err instanceof Error && err.name !== 'AbortError') {
+        opts.onError?.(err)
+        opts.onDone('error')
+      }
+    }
+  })()
+
+  return controller
+}
+
+// ── Legacy streamChat overload (existing components unchanged) ────────────
+export function streamChatLegacy(
   sessionId: string,
   messages: Array<{ role: string; content: string }>,
   featureMode: string,
   onChunk: (chunk: string) => void,
   onDone: () => void,
   onError?: (err: Error) => void
-): Promise<AbortController> {
-  const controller = new AbortController()
+): AbortController {
+  return streamChat({
+    sessionId,
+    message: messages[messages.length - 1]?.content ?? '',
+    featureMode,
+    onChunk,
+    onDone,
+    onError,
+  })
+}
 
-  try {
-    const res = await fetch(`${BASE}${API_ENDPOINTS.CHAT_STREAM}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        session_id: sessionId,
-        message: messages[messages.length - 1]?.content ?? '',
-        feature_mode: featureMode,
-      }),
-      signal: controller.signal,
-    })
+// ── Conversations API ──────────────────────────────────────────────────────
 
-    if (!res.ok || !res.body) {
-      throw new Error(`Stream failed: ${res.status}`)
-    }
+import type { Conversation, ConversationMessages, AIModel, TokenUsage } from './types'
 
-    const reader = res.body.getReader()
-    const decoder = new TextDecoder()
+export async function createConversation(
+  sessionId: string,
+  model?: string,
+  featureMode?: string
+): Promise<Conversation> {
+  return post<Conversation>('/api/conversations', {
+    session_id: sessionId,
+    model: model ?? 'claude-sonnet-4-6',
+    feature_mode: featureMode ?? 'standard',
+  })
+}
 
-    ;(async () => {
-      try {
-        while (true) {
-          const { done, value } = await reader.read()
-          if (done) break
-          const text = decoder.decode(value, { stream: true })
-          const lines = text.split('\n')
-          for (const line of lines) {
-            if (!line.startsWith('data: ')) continue
-            try {
-              const data = JSON.parse(line.slice(6)) as { type: string; content?: string; message?: string }
-              if (data.type === 'text' && data.content) {
-                onChunk(data.content)
-              } else if (data.type === 'done') {
-                onDone()
-                return
-              } else if (data.type === 'error') {
-                const msg = data.message ?? 'Stream error'
-                onError?.(new Error(msg))
-                onDone()
-                return
-              }
-            } catch {
-              // skip malformed lines
-            }
-          }
-        }
-        onDone()
-      } catch (err) {
-        if (err instanceof Error && err.name !== 'AbortError') {
-          onError?.(err)
-        }
-      }
-    })()
-  } catch (err) {
-    if (err instanceof Error && err.name !== 'AbortError') {
-      onError?.(err instanceof Error ? err : new Error(String(err)))
-    }
+export async function listConversations(
+  sessionId: string,
+  limit = 50,
+  offset = 0
+): Promise<{ conversations: Conversation[]; offset: number; limit: number }> {
+  return get(`/api/conversations/list/${sessionId}?limit=${limit}&offset=${offset}`)
+}
+
+export async function getConversationMessages(
+  conversationId: string,
+  branchIndex = 0
+): Promise<ConversationMessages> {
+  return get(`/api/conversations/${conversationId}/messages?branch_index=${branchIndex}`)
+}
+
+export async function updateConversation(
+  conversationId: string,
+  updates: { title?: string; pinned?: boolean; model?: string }
+): Promise<Conversation> {
+  const res = await fetch(`${BASE}/api/conversations/${conversationId}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(updates),
+  })
+  if (!res.ok) throw new Error(`Update failed: ${res.status}`)
+  return res.json()
+}
+
+export async function deleteConversation(conversationId: string): Promise<void> {
+  const res = await fetch(`${BASE}/api/conversations/${conversationId}`, {
+    method: 'DELETE',
+  })
+  if (!res.ok) throw new Error(`Delete failed: ${res.status}`)
+}
+
+export async function searchConversations(
+  sessionId: string,
+  query: string
+): Promise<{ query: string; results: Conversation[] }> {
+  return get(`/api/conversations/search/${sessionId}?q=${encodeURIComponent(query)}`)
+}
+
+export async function branchConversation(
+  conversationId: string,
+  parentMessageId: string
+): Promise<{ conversation_id: string; new_branch_index: number }> {
+  return post(`/api/conversations/${conversationId}/branch`, {
+    parent_message_id: parentMessageId,
+  })
+}
+
+// ── File Upload API ────────────────────────────────────────────────────────
+
+import type { FileAttachment } from './types'
+
+export async function uploadFile(
+  file: File,
+  sessionId: string,
+  conversationId?: string
+): Promise<FileAttachment> {
+  const formData = new FormData()
+  formData.append('file', file)
+  formData.append('session_id', sessionId)
+  if (conversationId) formData.append('conversation_id', conversationId)
+
+  const res = await fetch(`${BASE}/api/files/upload`, {
+    method: 'POST',
+    body: formData,
+  })
+  if (!res.ok) {
+    const err = await res.json().catch(() => null) as Record<string, unknown> | null
+    throw new Error((err?.detail as string) ?? `Upload failed: ${res.status}`)
   }
+  return res.json()
+}
 
-  return controller
+export async function deleteFile(fileId: string): Promise<void> {
+  const res = await fetch(`${BASE}/api/files/${fileId}`, { method: 'DELETE' })
+  if (!res.ok) throw new Error(`Delete failed: ${res.status}`)
+}
+
+// ── Models API ─────────────────────────────────────────────────────────────
+
+export async function listModels(): Promise<{ models: AIModel[] }> {
+  return get('/api/models')
 }
 
 // ── Feedback ──────────────────────────────────────────────────────────────
@@ -141,14 +317,14 @@ export async function submitFeedback(
   rating: 'up' | 'down',
   comment?: string
 ): Promise<void> {
-  await post('/v1/chat/feedback', { message_id: messageId, session_id: sessionId, rating, comment })
+  await post('/api/chat/feedback', { message_id: messageId, session_id: sessionId, rating, comment })
 }
 
 export async function exportConversation(
   sessionId: string,
   fmt: 'json' | 'txt' = 'json'
 ): Promise<void> {
-  const res = await fetch(`${BASE}/v1/chat/export/${sessionId}?fmt=${fmt}`)
+  const res = await fetch(`${BASE}/api/chat/export/${sessionId}?fmt=${fmt}`)
   if (!res.ok) throw new Error('Export failed')
   const blob = await res.blob()
   const url = URL.createObjectURL(blob)
@@ -159,6 +335,22 @@ export async function exportConversation(
   URL.revokeObjectURL(url)
 }
 
+// ── Chat Search ───────────────────────────────────────────────────────────
+
+export async function searchMessages(
+  sessionId: string,
+  query: string,
+  limit = 20
+): Promise<Array<{ id: string; role: string; content: string; timestamp: string; feature_mode: string | null; snippet: string }>> {
+  if (!query.trim()) return []
+  const result = await get<{
+    session_id: string
+    query: string
+    results: Array<{ id: string; role: string; content: string; timestamp: string; feature_mode: string | null; snippet: string }>
+  }>(`/api/chat/search/${sessionId}?q=${encodeURIComponent(query.trim())}&limit=${limit}`)
+  return result.results
+}
+
 // ── Chat History ──────────────────────────────────────────────────────────
 
 export async function getChatHistory(
@@ -166,7 +358,7 @@ export async function getChatHistory(
   limit = 100
 ): Promise<Array<{ id: string; role: string; content: string; timestamp: string; feature_mode: string | null }>> {
   const result = await get<{ session_id: string; messages: Array<{ id: string; role: string; content: string; timestamp: string; feature_mode: string | null }> }>(
-    `/v1/chat/history/${sessionId}?limit=${limit}`
+    `/api/chat/history/${sessionId}?limit=${limit}`
   )
   return result.messages
 }
@@ -555,7 +747,7 @@ export async function parliamentDebate(sessionId: string, query: string): Promis
 }
 
 export async function getForgeProgress(sessionId: string): Promise<unknown> {
-  return post('/v1/forge/status', { session_id: sessionId, concept: '' }).catch(() => ({}))
+  return post('/api/forge/status', { session_id: sessionId, concept: '' }).catch(() => ({}))
 }
 
 export async function getCurriculum(sessionId: string): Promise<unknown> {
@@ -602,7 +794,7 @@ export function alienMode(sessionId: string, concept: string, onChunk: (c: strin
 }
 
 export async function getLivingSyllabus(sessionId: string): Promise<unknown> {
-  return post('/v1/curriculum/next', { session_id: sessionId }).catch(() => ({ tree: [] }))
+  return post('/api/curriculum/next', { session_id: sessionId }).catch(() => ({ tree: [] }))
 }
 
 export async function getSymphonySequence(sessionId: string): Promise<unknown> {
@@ -665,4 +857,118 @@ export async function advanceForge(
 ): Promise<AbortController | { new_stage: string; stage_prompt: string }> {
   if (onChunk) return streamPost(API_ENDPOINTS.FORGE_ADVANCE, { session_id: sessionId, concept }, onChunk)
   return post(API_ENDPOINTS.FORGE_ADVANCE, { session_id: sessionId, concept })
+}
+
+// ── Auth ──────────────────────────────────────────────────────────────────────
+
+export interface AuthResponse {
+  access_token: string
+  refresh_token: string
+  token_type: string
+  user: { id: string; email: string; display_name: string; role: string; plan: string }
+}
+
+function _authHeaders(): Record<string, string> {
+  try {
+    const raw = typeof window !== 'undefined' ? localStorage.getItem('pyxis-auth') : null
+    if (!raw) return {}
+    const state = JSON.parse(raw)?.state
+    const token = state?.accessToken
+    return token ? { Authorization: `Bearer ${token}` } : {}
+  } catch { return {} }
+}
+
+async function authPost<T>(path: string, body: Record<string, unknown>): Promise<T> {
+  const res = await fetch(`${BASE}${path}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ..._authHeaders() },
+    body: JSON.stringify(body),
+  })
+  if (!res.ok) {
+    const json = await res.json().catch(() => ({}))
+    throw new Error(json?.detail ?? `API error (${res.status})`)
+  }
+  return res.json()
+}
+
+async function authGet<T>(path: string): Promise<T> {
+  const res = await fetch(`${BASE}${path}`, {
+    headers: { ..._authHeaders() },
+  })
+  if (!res.ok) {
+    const json = await res.json().catch(() => ({}))
+    throw new Error(json?.detail ?? `API error (${res.status})`)
+  }
+  return res.json()
+}
+
+async function authPatch<T>(path: string, body: Record<string, unknown>): Promise<T> {
+  const res = await fetch(`${BASE}${path}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ..._authHeaders() },
+    body: JSON.stringify(body),
+  })
+  if (!res.ok) {
+    const json = await res.json().catch(() => ({}))
+    throw new Error(json?.detail ?? `API error (${res.status})`)
+  }
+  return res.status === 204 ? (undefined as T) : res.json()
+}
+
+async function authDelete<T>(path: string): Promise<T> {
+  const res = await fetch(`${BASE}${path}`, {
+    method: 'DELETE',
+    headers: { ..._authHeaders() },
+  })
+  if (!res.ok) {
+    const json = await res.json().catch(() => ({}))
+    throw new Error(json?.detail ?? `API error (${res.status})`)
+  }
+  return res.status === 204 ? (undefined as T) : res.json()
+}
+
+export const authApi = {
+  register: (email: string, password: string, displayName?: string) =>
+    authPost<AuthResponse>('/api/auth/register', { email, password, display_name: displayName ?? '' }),
+
+  login: (email: string, password: string) =>
+    authPost<AuthResponse>('/api/auth/login', { email, password }),
+
+  refresh: (refreshToken: string) =>
+    authPost<AuthResponse>('/api/auth/refresh', { refresh_token: refreshToken }),
+
+  me: () => authGet<AuthResponse['user']>('/api/auth/me'),
+
+  changePassword: (currentPassword: string, newPassword: string) =>
+    authPost<void>('/api/auth/change-password', { current_password: currentPassword, new_password: newPassword }),
+}
+
+// ── Admin API ─────────────────────────────────────────────────────────────────
+
+export const adminApi = {
+  listUsers: (limit = 50, offset = 0, search?: string) => {
+    const params = new URLSearchParams({ limit: String(limit), offset: String(offset) })
+    if (search) params.set('search', search)
+    return authGet<{ total: number; users: unknown[] }>(`/api/admin/users?${params}`)
+  },
+
+  getUser: (id: string) => authGet<Record<string, unknown>>(`/api/admin/users/${id}`),
+
+  createUser: (body: { email: string; password: string; display_name?: string; role?: string; plan?: string }) =>
+    authPost<Record<string, unknown>>('/api/admin/users', body),
+
+  updateRole: (id: string, role: string) =>
+    authPatch<void>(`/api/admin/users/${id}/role`, { role }),
+
+  updatePlan: (id: string, plan: string) =>
+    authPatch<void>(`/api/admin/users/${id}/plan`, { plan }),
+
+  toggleUser: (id: string, disabled: boolean) =>
+    authPatch<void>(`/api/admin/users/${id}/toggle`, { disabled }),
+
+  deleteUser: (id: string) => authDelete<void>(`/api/admin/users/${id}`),
+
+  stats: () => authGet<Record<string, unknown>>('/api/admin/stats'),
+
+  health: () => authGet<Record<string, unknown>>('/api/admin/health'),
 }

@@ -2,6 +2,8 @@
 
 export type Theme = 'cosmos' | 'obsidian' | 'holographic'
 
+export type Workspace = 'think' | 'create' | 'research' | 'manage'
+
 export type FeatureMode =
   | 'standard'
   | 'psyche'
@@ -46,7 +48,93 @@ export interface Message {
   feature_mode?: FeatureMode
   psyche_snapshot?: Record<string, number>
   isStreaming?: boolean
+  isError?: boolean
+  errorCode?: string
   branches?: Message[][]
+  // New fields
+  model?: string
+  branchIndex?: number
+  versionIndex?: number    // which version of this message (0=original, 1=regen1...)
+  versionCount?: number    // total versions available
+  usage?: TokenUsage
+  toolCalls?: ToolCall[]
+  toolResults?: ToolResult[]
+  thinkingContent?: string
+  attachments?: FileAttachment[]
+}
+
+export interface TokenUsage {
+  input: number
+  output: number
+  cache_read?: number
+  cache_created?: number
+  model?: string
+}
+
+export interface ToolCall {
+  id: string
+  name: string
+  label: string       // "Searching: query" / "Running code..."
+  status: 'running' | 'done' | 'error'
+  input?: Record<string, unknown>
+  result?: string
+}
+
+export interface ToolResult {
+  tool_name: string
+  tool_call_id: string
+  content: string
+}
+
+export interface FileAttachment {
+  file_id: string
+  filename: string
+  content_type: string
+  file_size: string
+  extension: string
+  page_count?: number
+  truncated: boolean
+  has_image: boolean
+  preview: string
+}
+
+// ── Conversation (sidebar) ────────────────────────────────────────────────
+
+export interface Conversation {
+  id: string
+  session_id: string
+  title: string | null
+  model: string
+  feature_mode: string | null
+  pinned: boolean
+  created_at: string
+  updated_at: string
+}
+
+export interface ConversationGroup {
+  label: string   // "Today" | "Yesterday" | "Last 7 Days" | "Last 30 Days" | "Older"
+  conversations: Conversation[]
+}
+
+export interface ConversationMessages {
+  conversation: Conversation
+  messages: Message[]
+  branch_index: number
+  branch_count: number
+  branch_indices: number[]
+}
+
+// ── Model types ───────────────────────────────────────────────────────────
+
+export interface AIModel {
+  id: string
+  name: string
+  provider: 'openai' | 'anthropic' | 'groq'
+  context_window: number
+  description: string
+  tier: 'free' | 'pro' | 'enterprise'
+  strengths: string[]
+  available: boolean
 }
 
 export interface Session {
